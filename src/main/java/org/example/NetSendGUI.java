@@ -30,7 +30,7 @@ public class NetSendGUI extends JFrame {
     }
 
     private void initializeUI() {
-        setTitle("Net Send - Multicast Messaging");
+        setTitle("Gửi Tin Nhắn - Multicast");
         setSize(900, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -47,30 +47,37 @@ public class NetSendGUI extends JFrame {
         JPanel ipPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         try {
             String localIP = InetAddress.getLocalHost().getHostAddress();
-            localIPLabel = new JLabel("Your IP: " + localIP);
+            localIPLabel = new JLabel("Địa chỉ IP của bạn: " + localIP);
             localIPLabel.setFont(new Font("Arial", Font.BOLD, 16));
             localIPLabel.setForeground(new Color(0, 100, 0));
             ipPanel.add(localIPLabel);
         } catch (Exception e) {
-            localIPLabel = new JLabel("Your IP: Unable to detect");
+            localIPLabel = new JLabel("Địa chỉ IP của bạn: Không xác định được");
             localIPLabel.setFont(new Font("Arial", Font.BOLD, 16));
             ipPanel.add(localIPLabel);
         }
         
         // Group Panel
         JPanel groupPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
-        JLabel groupLabel = new JLabel("Select Your Group:");
+        JLabel groupLabel = new JLabel("Chọn nhóm của bạn:");
         groupLabel.setFont(new Font("Arial", Font.BOLD, 16));
         groupPanel.add(groupLabel);
         
-        String[] groups = {"None", "groupA", "groupB", "groupC"};
+        String[] groups = {"Không có", "Nhóm A", "Nhóm B", "Nhóm C"};
         groupSelector = new JComboBox<>(groups);
         groupSelector.setFont(new Font("Arial", Font.PLAIN, 15));
         groupSelector.setPreferredSize(new Dimension(150, 35));
-        groupSelector.addActionListener(e -> joinGroup((String) groupSelector.getSelectedItem()));
+        groupSelector.addActionListener(e -> {
+            String selected = (String) groupSelector.getSelectedItem();
+            String groupName = "None";
+            if (selected.equals("Nhóm A")) groupName = "groupA";
+            else if (selected.equals("Nhóm B")) groupName = "groupB";
+            else if (selected.equals("Nhóm C")) groupName = "groupC";
+            joinGroup(groupName);
+        });
         groupPanel.add(groupSelector);
         
-        currentGroupLabel = new JLabel("Current Group: None");
+        currentGroupLabel = new JLabel("Nhóm hiện tại: Không có");
         currentGroupLabel.setFont(new Font("Arial", Font.BOLD, 16));
         currentGroupLabel.setForeground(new Color(0, 0, 200));
         groupPanel.add(currentGroupLabel);
@@ -82,13 +89,13 @@ public class NetSendGUI extends JFrame {
 
         // Center panel - Received messages
         JPanel centerPanel = new JPanel(new BorderLayout(5, 5));
-        TitledBorder receivedBorder = new TitledBorder("Received Messages");
+        TitledBorder receivedBorder = new TitledBorder("Tin nhắn đã nhận");
         receivedBorder.setTitleFont(new Font("Arial", Font.BOLD, 16));
         centerPanel.setBorder(receivedBorder);
 
         receivedMessagesArea = new JTextArea();
         receivedMessagesArea.setEditable(false);
-        receivedMessagesArea.setFont(new Font("Consolas", Font.PLAIN, 14));
+        receivedMessagesArea.setFont(new Font("Arial Unicode MS", Font.PLAIN, 14));
         receivedMessagesArea.setLineWrap(true);
         receivedMessagesArea.setWrapStyleWord(true);
 
@@ -100,13 +107,13 @@ public class NetSendGUI extends JFrame {
 
         // Bottom panel - Send message
         JPanel bottomPanel = new JPanel(new BorderLayout(5, 5));
-        TitledBorder sendBorder = new TitledBorder("Send Message");
+        TitledBorder sendBorder = new TitledBorder("Gửi tin nhắn");
         sendBorder.setTitleFont(new Font("Arial", Font.BOLD, 16));
         bottomPanel.setBorder(sendBorder);
 
         // Destination panel
         JPanel destPanel = new JPanel(new BorderLayout(5, 5));
-        JLabel destLabel = new JLabel("Destination:");
+        JLabel destLabel = new JLabel("Đích đến:");
         destLabel.setFont(new Font("Arial", Font.BOLD, 15));
         destLabel.setPreferredSize(new Dimension(100, 35));
         destinationField = new JTextField();
@@ -114,7 +121,7 @@ public class NetSendGUI extends JFrame {
         destinationField.setPreferredSize(new Dimension(0, 35));
 
         JPanel destHelpPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
-        JLabel helpLabel = new JLabel("<html><small style='font-size:12px;'>Enter: IP address | * (broadcast to all) | groupA | groupB | groupC</small></html>");
+        JLabel helpLabel = new JLabel("<html><small style='font-size:12px;'>Nhập: Địa chỉ IP | * (gửi tất cả) | groupA | groupB | groupC</small></html>");
         helpLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         helpLabel.setForeground(Color.GRAY);
         destHelpPanel.add(helpLabel);
@@ -125,13 +132,13 @@ public class NetSendGUI extends JFrame {
 
         // Message panel
         JPanel msgPanel = new JPanel(new BorderLayout(5, 5));
-        JLabel msgLabel = new JLabel("Message:");
+        JLabel msgLabel = new JLabel("Tin nhắn:");
         msgLabel.setFont(new Font("Arial", Font.BOLD, 15));
         msgLabel.setPreferredSize(new Dimension(100, 35));
         msgLabel.setVerticalAlignment(SwingConstants.TOP);
 
         messageField = new JTextArea(4, 30);
-        messageField.setFont(new Font("Arial", Font.PLAIN, 15));
+        messageField.setFont(new Font("Arial Unicode MS", Font.PLAIN, 15));
         messageField.setLineWrap(true);
         messageField.setWrapStyleWord(true);
         JScrollPane msgScrollPane = new JScrollPane(messageField);
@@ -144,11 +151,11 @@ public class NetSendGUI extends JFrame {
 
         // Quick send buttons
         JPanel quickSendPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 5));
-        JLabel quickLabel = new JLabel("Quick Send:");
+        JLabel quickLabel = new JLabel("Gửi nhanh:");
         quickLabel.setFont(new Font("Arial", Font.BOLD, 14));
         quickSendPanel.add(quickLabel);
 
-        JButton broadcastBtn = new JButton("Broadcast (*)");
+        JButton broadcastBtn = new JButton("Gửi tất cả (*)");
         broadcastBtn.setFont(new Font("Arial", Font.BOLD, 13));
         broadcastBtn.setPreferredSize(new Dimension(140, 32));
         broadcastBtn.addActionListener(e -> {
@@ -157,7 +164,7 @@ public class NetSendGUI extends JFrame {
         });
         quickSendPanel.add(broadcastBtn);
 
-        JButton groupABtn = new JButton("Group A");
+        JButton groupABtn = new JButton("Nhóm A");
         groupABtn.setFont(new Font("Arial", Font.BOLD, 13));
         groupABtn.setPreferredSize(new Dimension(100, 32));
         groupABtn.addActionListener(e -> {
@@ -166,7 +173,7 @@ public class NetSendGUI extends JFrame {
         });
         quickSendPanel.add(groupABtn);
 
-        JButton groupBBtn = new JButton("Group B");
+        JButton groupBBtn = new JButton("Nhóm B");
         groupBBtn.setFont(new Font("Arial", Font.BOLD, 13));
         groupBBtn.setPreferredSize(new Dimension(100, 32));
         groupBBtn.addActionListener(e -> {
@@ -175,7 +182,7 @@ public class NetSendGUI extends JFrame {
         });
         quickSendPanel.add(groupBBtn);
 
-        JButton groupCBtn = new JButton("Group C");
+        JButton groupCBtn = new JButton("Nhóm C");
         groupCBtn.setFont(new Font("Arial", Font.BOLD, 13));
         groupCBtn.setPreferredSize(new Dimension(100, 32));
         groupCBtn.addActionListener(e -> {
@@ -186,15 +193,15 @@ public class NetSendGUI extends JFrame {
 
         // Main action buttons
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
-        JButton sendButton = new JButton("Send Message");
+        JButton sendButton = new JButton("Gửi tin nhắn");
         sendButton.setFont(new Font("Arial", Font.BOLD, 14));
         sendButton.setPreferredSize(new Dimension(150, 38));
         sendButton.setBackground(new Color(70, 130, 180));
-        sendButton.setForeground(Color.WHITE);
+        sendButton.setForeground(Color.BLACK);
         sendButton.setFocusPainted(false);
         sendButton.addActionListener(e -> sendMessage());
 
-        JButton clearButton = new JButton("Clear");
+        JButton clearButton = new JButton("Xóa");
         clearButton.setFont(new Font("Arial", Font.BOLD, 14));
         clearButton.setPreferredSize(new Dimension(100, 38));
         clearButton.addActionListener(e -> clearFields());
@@ -217,7 +224,7 @@ public class NetSendGUI extends JFrame {
         // Status bar
         JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
         statusPanel.setBorder(BorderFactory.createEtchedBorder());
-        statusLabel = new JLabel("Ready to send/receive messages");
+        statusLabel = new JLabel("Sẵn sàng gửi/nhận tin nhắn");
         statusLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         statusPanel.add(statusLabel);
 
@@ -238,20 +245,26 @@ public class NetSendGUI extends JFrame {
             try {
                 currentGroup = group;
                 receiver.joinGroup(group);
-                currentGroupLabel.setText("Current Group: " + group);
+
+                String displayGroup = "Không có";
+                if (group.equals("groupA")) displayGroup = "Nhóm A";
+                else if (group.equals("groupB")) displayGroup = "Nhóm B";
+                else if (group.equals("groupC")) displayGroup = "Nhóm C";
+
+                currentGroupLabel.setText("Nhóm hiện tại: " + displayGroup);
 
                 String timestamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
-                String systemMessage = String.format("[%s] SYSTEM: Joined group '%s'\n%s\n",
-                    timestamp, group, "─".repeat(60));
+                String systemMessage = String.format("[%s] HỆ THỐNG: Đã tham gia nhóm '%s'\n%s\n",
+                    timestamp, displayGroup, "─".repeat(60));
                 receivedMessagesArea.append(systemMessage);
                 receivedMessagesArea.setCaretPosition(receivedMessagesArea.getDocument().getLength());
 
-                updateStatus("Successfully joined group: " + group, new Color(0, 100, 200));
+                updateStatus("Đã tham gia nhóm thành công: " + displayGroup, new Color(0, 100, 200));
             } catch (Exception e) {
-                updateStatus("Failed to join group: " + e.getMessage(), Color.RED);
+                updateStatus("Không thể tham gia nhóm: " + e.getMessage(), Color.RED);
                 JOptionPane.showMessageDialog(this,
-                    "Error joining group:\n" + e.getMessage(),
-                    "Error",
+                    "Lỗi khi tham gia nhóm:\n" + e.getMessage(),
+                    "Lỗi",
                     JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -263,24 +276,28 @@ public class NetSendGUI extends JFrame {
                 String timestamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
                 String destInfo = "";
                 if (destination.equals("*")) {
-                    destInfo = " [BROADCAST]";
+                    destInfo = " [BROADCAST - GỬI TẤT CẢ]";
                 } else if (destination.startsWith("group")) {
-                    destInfo = " [TO: " + destination + "]";
+                    String groupName = destination;
+                    if (destination.equals("groupA")) groupName = "Nhóm A";
+                    else if (destination.equals("groupB")) groupName = "Nhóm B";
+                    else if (destination.equals("groupC")) groupName = "Nhóm C";
+                    destInfo = " [ĐẾN: " + groupName + "]";
                 } else {
-                    destInfo = " [DIRECT]";
+                    destInfo = " [TRỰC TIẾP]";
                 }
 
-                String displayMessage = String.format("[%s]%s From %s:\n%s\n%s\n",
+                String displayMessage = String.format("[%s]%s Từ %s:\n%s\n%s\n",
                     timestamp, destInfo, senderIP, message, "─".repeat(60));
                 receivedMessagesArea.append(displayMessage);
                 receivedMessagesArea.setCaretPosition(receivedMessagesArea.getDocument().getLength());
 
                 // Show notification
-                showNotification("New Message" + destInfo, "From: " + senderIP);
+                showNotification("Tin nhắn mới" + destInfo, "Từ: " + senderIP);
             });
         });
         receiver.start();
-        updateStatus("Receiver started. Listening for messages...", Color.BLUE);
+        updateStatus("Đã bắt đầu nhận tin nhắn. Đang lắng nghe...", Color.BLUE);
     }
 
     private void sendMessage() {
@@ -289,16 +306,16 @@ public class NetSendGUI extends JFrame {
 
         if (destination.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                "Please enter a destination!",
-                "Error",
+                "Vui lòng nhập địa chỉ đích!",
+                "Lỗi",
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         if (message.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                "Please enter a message!",
-                "Error",
+                "Vui lòng nhập tin nhắn!",
+                "Lỗi",
                 JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -308,28 +325,32 @@ public class NetSendGUI extends JFrame {
 
             String destType = "";
             if (destination.equals("*")) {
-                destType = " [BROADCAST]";
+                destType = " [BROADCAST - GỬI TẤT CẢ]";
             } else if (destination.startsWith("group")) {
-                destType = " [GROUP]";
+                String groupName = destination;
+                if (destination.equals("groupA")) groupName = "Nhóm A";
+                else if (destination.equals("groupB")) groupName = "Nhóm B";
+                else if (destination.equals("groupC")) groupName = "Nhóm C";
+                destType = " [NHÓM: " + groupName + "]";
             } else {
-                destType = " [DIRECT]";
+                destType = " [TRỰC TIẾP]";
             }
 
-            updateStatus("Message sent successfully to: " + destination + destType, new Color(0, 128, 0));
+            updateStatus("Đã gửi tin nhắn thành công đến: " + destination + destType, new Color(0, 128, 0));
             messageField.setText("");
 
             // Log sent message
             String timestamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
-            String logMessage = String.format("[%s] SENT%s to %s: %s\n%s\n",
+            String logMessage = String.format("[%s] ĐÃ GỬI%s đến %s: %s\n%s\n",
                 timestamp, destType, destination, message, "─".repeat(60));
             receivedMessagesArea.append(logMessage);
             receivedMessagesArea.setCaretPosition(receivedMessagesArea.getDocument().getLength());
 
         } catch (Exception ex) {
-            updateStatus("Failed to send message: " + ex.getMessage(), Color.RED);
+            updateStatus("Không thể gửi tin nhắn: " + ex.getMessage(), Color.RED);
             JOptionPane.showMessageDialog(this,
-                "Error sending message:\n" + ex.getMessage(),
-                "Error",
+                "Lỗi khi gửi tin nhắn:\n" + ex.getMessage(),
+                "Lỗi",
                 JOptionPane.ERROR_MESSAGE);
         }
     }
