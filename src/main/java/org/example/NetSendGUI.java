@@ -16,9 +16,12 @@ public class NetSendGUI extends JFrame {
     private JTextArea messageField;
     private JLabel statusLabel;
     private JLabel localIPLabel;
+    private JLabel currentGroupLabel;
+    private JComboBox<String> groupSelector;
 
     private MessageReceiver receiver;
     private MessageSender sender;
+    private String currentGroup = "None";
 
     public NetSendGUI() {
         sender = new MessageSender();
@@ -28,58 +31,91 @@ public class NetSendGUI extends JFrame {
 
     private void initializeUI() {
         setTitle("Net Send - Multicast Messaging");
-        setSize(700, 600);
+        setSize(900, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         // Main panel
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        mainPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        // Top panel - Local IP info
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Top panel - Local IP info and Group selection
+        JPanel topPanel = new JPanel(new BorderLayout(5, 5));
         topPanel.setBorder(BorderFactory.createEtchedBorder());
+        
+        // IP Panel
+        JPanel ipPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         try {
             String localIP = InetAddress.getLocalHost().getHostAddress();
             localIPLabel = new JLabel("Your IP: " + localIP);
-            localIPLabel.setFont(new Font("Arial", Font.BOLD, 12));
+            localIPLabel.setFont(new Font("Arial", Font.BOLD, 16));
             localIPLabel.setForeground(new Color(0, 100, 0));
-            topPanel.add(localIPLabel);
+            ipPanel.add(localIPLabel);
         } catch (Exception e) {
             localIPLabel = new JLabel("Your IP: Unable to detect");
-            topPanel.add(localIPLabel);
+            localIPLabel.setFont(new Font("Arial", Font.BOLD, 16));
+            ipPanel.add(localIPLabel);
         }
+        
+        // Group Panel
+        JPanel groupPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        JLabel groupLabel = new JLabel("Select Your Group:");
+        groupLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        groupPanel.add(groupLabel);
+        
+        String[] groups = {"None", "groupA", "groupB", "groupC"};
+        groupSelector = new JComboBox<>(groups);
+        groupSelector.setFont(new Font("Arial", Font.PLAIN, 15));
+        groupSelector.setPreferredSize(new Dimension(150, 35));
+        groupSelector.addActionListener(e -> joinGroup((String) groupSelector.getSelectedItem()));
+        groupPanel.add(groupSelector);
+        
+        currentGroupLabel = new JLabel("Current Group: None");
+        currentGroupLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        currentGroupLabel.setForeground(new Color(0, 0, 200));
+        groupPanel.add(currentGroupLabel);
+        
+        topPanel.add(ipPanel, BorderLayout.NORTH);
+        topPanel.add(groupPanel, BorderLayout.SOUTH);
+        
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
         // Center panel - Received messages
         JPanel centerPanel = new JPanel(new BorderLayout(5, 5));
-        centerPanel.setBorder(new TitledBorder("Received Messages"));
+        TitledBorder receivedBorder = new TitledBorder("Received Messages");
+        receivedBorder.setTitleFont(new Font("Arial", Font.BOLD, 16));
+        centerPanel.setBorder(receivedBorder);
 
         receivedMessagesArea = new JTextArea();
         receivedMessagesArea.setEditable(false);
-        receivedMessagesArea.setFont(new Font("Consolas", Font.PLAIN, 12));
+        receivedMessagesArea.setFont(new Font("Consolas", Font.PLAIN, 14));
         receivedMessagesArea.setLineWrap(true);
         receivedMessagesArea.setWrapStyleWord(true);
 
         JScrollPane scrollPane = new JScrollPane(receivedMessagesArea);
-        scrollPane.setPreferredSize(new Dimension(650, 250));
+        scrollPane.setPreferredSize(new Dimension(850, 300));
         centerPanel.add(scrollPane, BorderLayout.CENTER);
 
         mainPanel.add(centerPanel, BorderLayout.CENTER);
 
         // Bottom panel - Send message
         JPanel bottomPanel = new JPanel(new BorderLayout(5, 5));
-        bottomPanel.setBorder(new TitledBorder("Send Message"));
+        TitledBorder sendBorder = new TitledBorder("Send Message");
+        sendBorder.setTitleFont(new Font("Arial", Font.BOLD, 16));
+        bottomPanel.setBorder(sendBorder);
 
         // Destination panel
         JPanel destPanel = new JPanel(new BorderLayout(5, 5));
         JLabel destLabel = new JLabel("Destination:");
-        destLabel.setPreferredSize(new Dimension(80, 25));
+        destLabel.setFont(new Font("Arial", Font.BOLD, 15));
+        destLabel.setPreferredSize(new Dimension(100, 35));
         destinationField = new JTextField();
-        destinationField.setFont(new Font("Arial", Font.PLAIN, 12));
+        destinationField.setFont(new Font("Arial", Font.PLAIN, 15));
+        destinationField.setPreferredSize(new Dimension(0, 35));
 
-        JPanel destHelpPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        JLabel helpLabel = new JLabel("<html><small>Enter: IP address | * (all) | groupA | groupB | groupC</small></html>");
+        JPanel destHelpPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        JLabel helpLabel = new JLabel("<html><small style='font-size:12px;'>Enter: IP address | * (broadcast to all) | groupA | groupB | groupC</small></html>");
+        helpLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         helpLabel.setForeground(Color.GRAY);
         destHelpPanel.add(helpLabel);
 
@@ -90,11 +126,12 @@ public class NetSendGUI extends JFrame {
         // Message panel
         JPanel msgPanel = new JPanel(new BorderLayout(5, 5));
         JLabel msgLabel = new JLabel("Message:");
-        msgLabel.setPreferredSize(new Dimension(80, 25));
+        msgLabel.setFont(new Font("Arial", Font.BOLD, 15));
+        msgLabel.setPreferredSize(new Dimension(100, 35));
         msgLabel.setVerticalAlignment(SwingConstants.TOP);
 
         messageField = new JTextArea(4, 30);
-        messageField.setFont(new Font("Arial", Font.PLAIN, 12));
+        messageField.setFont(new Font("Arial", Font.PLAIN, 15));
         messageField.setLineWrap(true);
         messageField.setWrapStyleWord(true);
         JScrollPane msgScrollPane = new JScrollPane(messageField);
@@ -102,21 +139,71 @@ public class NetSendGUI extends JFrame {
         msgPanel.add(msgLabel, BorderLayout.WEST);
         msgPanel.add(msgScrollPane, BorderLayout.CENTER);
 
-        // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // Button panel with quick send buttons
+        JPanel buttonPanel = new JPanel(new BorderLayout(5, 5));
+
+        // Quick send buttons
+        JPanel quickSendPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 5));
+        JLabel quickLabel = new JLabel("Quick Send:");
+        quickLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        quickSendPanel.add(quickLabel);
+
+        JButton broadcastBtn = new JButton("Broadcast (*)");
+        broadcastBtn.setFont(new Font("Arial", Font.BOLD, 13));
+        broadcastBtn.setPreferredSize(new Dimension(140, 32));
+        broadcastBtn.addActionListener(e -> {
+            destinationField.setText("*");
+            messageField.requestFocus();
+        });
+        quickSendPanel.add(broadcastBtn);
+
+        JButton groupABtn = new JButton("Group A");
+        groupABtn.setFont(new Font("Arial", Font.BOLD, 13));
+        groupABtn.setPreferredSize(new Dimension(100, 32));
+        groupABtn.addActionListener(e -> {
+            destinationField.setText("groupA");
+            messageField.requestFocus();
+        });
+        quickSendPanel.add(groupABtn);
+
+        JButton groupBBtn = new JButton("Group B");
+        groupBBtn.setFont(new Font("Arial", Font.BOLD, 13));
+        groupBBtn.setPreferredSize(new Dimension(100, 32));
+        groupBBtn.addActionListener(e -> {
+            destinationField.setText("groupB");
+            messageField.requestFocus();
+        });
+        quickSendPanel.add(groupBBtn);
+
+        JButton groupCBtn = new JButton("Group C");
+        groupCBtn.setFont(new Font("Arial", Font.BOLD, 13));
+        groupCBtn.setPreferredSize(new Dimension(100, 32));
+        groupCBtn.addActionListener(e -> {
+            destinationField.setText("groupC");
+            messageField.requestFocus();
+        });
+        quickSendPanel.add(groupCBtn);
+
+        // Main action buttons
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         JButton sendButton = new JButton("Send Message");
-        sendButton.setPreferredSize(new Dimension(120, 30));
+        sendButton.setFont(new Font("Arial", Font.BOLD, 14));
+        sendButton.setPreferredSize(new Dimension(150, 38));
         sendButton.setBackground(new Color(70, 130, 180));
-        sendButton.setForeground(Color.BLACK);
+        sendButton.setForeground(Color.WHITE);
         sendButton.setFocusPainted(false);
         sendButton.addActionListener(e -> sendMessage());
 
         JButton clearButton = new JButton("Clear");
-        clearButton.setPreferredSize(new Dimension(80, 30));
+        clearButton.setFont(new Font("Arial", Font.BOLD, 14));
+        clearButton.setPreferredSize(new Dimension(100, 38));
         clearButton.addActionListener(e -> clearFields());
 
-        buttonPanel.add(clearButton);
-        buttonPanel.add(sendButton);
+        actionPanel.add(clearButton);
+        actionPanel.add(sendButton);
+
+        buttonPanel.add(quickSendPanel, BorderLayout.NORTH);
+        buttonPanel.add(actionPanel, BorderLayout.SOUTH);
 
         // Assemble bottom panel
         JPanel sendPanel = new JPanel(new BorderLayout(5, 5));
@@ -128,10 +215,10 @@ public class NetSendGUI extends JFrame {
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         // Status bar
-        JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
         statusPanel.setBorder(BorderFactory.createEtchedBorder());
         statusLabel = new JLabel("Ready to send/receive messages");
-        statusLabel.setFont(new Font("Arial", Font.PLAIN, 11));
+        statusLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         statusPanel.add(statusLabel);
 
         add(mainPanel, BorderLayout.CENTER);
@@ -146,17 +233,50 @@ public class NetSendGUI extends JFrame {
         });
     }
 
+    private void joinGroup(String group) {
+        if (receiver != null) {
+            try {
+                currentGroup = group;
+                receiver.joinGroup(group);
+                currentGroupLabel.setText("Current Group: " + group);
+
+                String timestamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
+                String systemMessage = String.format("[%s] SYSTEM: Joined group '%s'\n%s\n",
+                    timestamp, group, "─".repeat(60));
+                receivedMessagesArea.append(systemMessage);
+                receivedMessagesArea.setCaretPosition(receivedMessagesArea.getDocument().getLength());
+
+                updateStatus("Successfully joined group: " + group, new Color(0, 100, 200));
+            } catch (Exception e) {
+                updateStatus("Failed to join group: " + e.getMessage(), Color.RED);
+                JOptionPane.showMessageDialog(this,
+                    "Error joining group:\n" + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     private void startReceiver() {
-        receiver = new MessageReceiver((senderIP, message) -> {
+        receiver = new MessageReceiver((senderIP, message, destination) -> {
             SwingUtilities.invokeLater(() -> {
                 String timestamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
-                String displayMessage = String.format("[%s] From %s:\n%s\n%s\n",
-                    timestamp, senderIP, message, "─".repeat(60));
+                String destInfo = "";
+                if (destination.equals("*")) {
+                    destInfo = " [BROADCAST]";
+                } else if (destination.startsWith("group")) {
+                    destInfo = " [TO: " + destination + "]";
+                } else {
+                    destInfo = " [DIRECT]";
+                }
+
+                String displayMessage = String.format("[%s]%s From %s:\n%s\n%s\n",
+                    timestamp, destInfo, senderIP, message, "─".repeat(60));
                 receivedMessagesArea.append(displayMessage);
                 receivedMessagesArea.setCaretPosition(receivedMessagesArea.getDocument().getLength());
 
                 // Show notification
-                showNotification("New Message", "From: " + senderIP);
+                showNotification("New Message" + destInfo, "From: " + senderIP);
             });
         });
         receiver.start();
@@ -185,13 +305,23 @@ public class NetSendGUI extends JFrame {
 
         try {
             sender.sendMessage(destination, message);
-            updateStatus("Message sent successfully to: " + destination, new Color(0, 128, 0));
+
+            String destType = "";
+            if (destination.equals("*")) {
+                destType = " [BROADCAST]";
+            } else if (destination.startsWith("group")) {
+                destType = " [GROUP]";
+            } else {
+                destType = " [DIRECT]";
+            }
+
+            updateStatus("Message sent successfully to: " + destination + destType, new Color(0, 128, 0));
             messageField.setText("");
 
             // Log sent message
             String timestamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
-            String logMessage = String.format("[%s] SENT to %s: %s\n%s\n",
-                timestamp, destination, message, "─".repeat(60));
+            String logMessage = String.format("[%s] SENT%s to %s: %s\n%s\n",
+                timestamp, destType, destination, message, "─".repeat(60));
             receivedMessagesArea.append(logMessage);
             receivedMessagesArea.setCaretPosition(receivedMessagesArea.getDocument().getLength());
 

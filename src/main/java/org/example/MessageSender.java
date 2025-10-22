@@ -6,20 +6,24 @@ import java.net.*;
 public class MessageSender {
 
     public void sendMessage(String destination, String message) throws IOException {
+        // Format: DESTINATION|MESSAGE
+        String fullMessage = destination + "|" + message;
+
         if (destination.equals("*")) {
             // Broadcast to all machines
-            sendBroadcast(message);
-        } else if (destination.startsWith("group")) {
+            sendBroadcast(fullMessage);
+        } else if (destination.toLowerCase().startsWith("group")) {
             // Send to a group
-            sendToGroup(destination, message);
+            sendToGroup(destination, fullMessage);
         } else {
             // Send to specific IP
-            sendToIP(destination, message);
+            sendToIP(destination, fullMessage);
         }
     }
 
     private void sendBroadcast(String message) throws IOException {
         MulticastSocket socket = new MulticastSocket();
+        socket.setTimeToLive(255);
         InetAddress group = InetAddress.getByName(MulticastConfig.MULTICAST_ADDRESS);
 
         byte[] buffer = message.getBytes();
@@ -32,6 +36,7 @@ public class MessageSender {
 
         socket.send(packet);
         socket.close();
+        System.out.println("Broadcast message sent: " + message);
     }
 
     private void sendToGroup(String groupName, String message) throws IOException {
@@ -51,10 +56,11 @@ public class MessageSender {
                 groupAddress = MulticastConfig.GROUP_C;
                 break;
             default:
-                throw new IllegalArgumentException("Unknown group: " + groupName);
+                throw new IllegalArgumentException("Unknown group: " + groupName + ". Use groupA, groupB, or groupC");
         }
 
         MulticastSocket socket = new MulticastSocket();
+        socket.setTimeToLive(255);
         InetAddress group = InetAddress.getByName(groupAddress);
 
         byte[] buffer = message.getBytes();
@@ -67,6 +73,7 @@ public class MessageSender {
 
         socket.send(packet);
         socket.close();
+        System.out.println("Group message sent to " + groupName + ": " + message);
     }
 
     private void sendToIP(String ip, String message) throws IOException {
@@ -83,6 +90,6 @@ public class MessageSender {
 
         socket.send(packet);
         socket.close();
+        System.out.println("Direct message sent to " + ip + ": " + message);
     }
 }
-
